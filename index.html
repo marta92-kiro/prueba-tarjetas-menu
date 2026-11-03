@@ -1,0 +1,481 @@
+
+<!DOCTYPE html>
+<html lang='es'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Creador de Tarjetas de Recetas A7 Horizontal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 850px;
+            width: 100%;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-top: 0;
+            font-size: 24px;
+        }
+        .row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .col {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+        input[type="text"], input[type="number"], textarea, select, input[type="color"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        input[type="color"] {
+            height: 40px;
+            padding: 2px;
+            cursor: pointer;
+        }
+        textarea {
+            resize: vertical;
+            height: 90px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        button {
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            flex: 1;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .button-generate {
+            background-color: #2ecc71;
+        }
+        .button-generate:hover {
+            background-color: #27ae60;
+        }
+        .button-auto {
+            background-color: #9b59b6;
+        }
+        .button-auto:hover {
+            background-color: #8e44ad;
+        }
+        .button-download {
+            background-color: #e67e22;
+        }
+        .button-download:hover {
+            background-color: #d35400;
+        }
+        .button-print {
+            background-color: #3498db;
+        }
+        .button-print:hover {
+            background-color: #2980b9;
+        }
+
+        /* Estilos de la Tarjeta A7 Horizontal (105mm x 74mm -> Escala aproximada 397px x 280px) */
+        .preview-area {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .card-container {
+            text-align: center;
+        }
+        .card-title-label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #7f8c8d;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        .a7-card {
+            width: 397px;
+            height: 280px;
+            background: #fff;
+            border: 5px solid #e67e22; /* Borde personalizable */
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            background-color: #fdfefe;
+            background-image: radial-gradient(#e5e7eb 1.2px, transparent 1.2px);
+            background-size: 12px 12px;
+        }
+
+        /* Cara Frontal */
+        .front-card {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .front-card .recipe-title {
+            font-size: 28px;
+            color: #2c3e50;
+            margin: 10px 0;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        .front-card .servings {
+            font-size: 14px;
+            color: #7f8c8d;
+            border-top: 1px dashed #ccc;
+            border-bottom: 1px dashed #ccc;
+            padding: 4px 20px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        /* Cara Trasera */
+        .back-card {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            font-size: 11px;
+            text-align: left;
+        }
+        .back-col-ingredients {
+            flex: 0.45;
+            border-right: 1px dashed #ddd;
+            padding-right: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+        .back-col-instructions {
+            flex: 0.55;
+            display: flex;
+            flex-direction: column;
+        }
+        .back-card h3 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 2px;
+        }
+        .back-card .ingredients-list {
+            margin: 0;
+            padding-left: 14px;
+            line-height: 1.35;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .back-card .instructions {
+            line-height: 1.35;
+            color: #555;
+            overflow-y: auto;
+            white-space: pre-line;
+            flex-grow: 1;
+            font-style: italic;
+        }
+
+        .watermark {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 8px;
+            color: #bdc3c7;
+            font-weight: bold;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 10mm;
+            }
+            .a7-card {
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+            .card-title-label {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Creador de Tarjetas de Receta A7 (Horizontal)</h1>
+
+    <div class="row">
+        <div class="col form-group">
+            <label for="titleInput">Título de la Receta:</label>
+            <input type="text" id="titleInput" placeholder="Ej: Guacamole, Brownie, Tacos, Paella, Tortilla...">
+        </div>
+        <div class="col form-group">
+            <label for="servingsInput">Número de Personas:</label>
+            <input type="number" id="servingsInput" value="4" min="1">
+        </div>
+        <div class="col form-group">
+            <label for="borderColorInput">Color del Borde:</label>
+            <input type="color" id="borderColorInput" value="#e67e22" onchange="updateBorderColor(this.value)">
+        </div>
+    </div>
+
+    <div class="button-group" style="margin-bottom: 15px;">
+        <button class="button-auto" onclick="autoFillRecipe()">✨ Auto-Completar con IA</button>
+    </div>
+
+    <div class="form-group">
+        <label for="ingredientsInput">Ingredientes (uno por línea):</label>
+        <textarea id="ingredientsInput" placeholder="Ej:
+3 Aguacates
+1/2 Cebolla
+1 Lima
+Sal y Cilantro"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="descInput">Preparación / Elaboración Rápida:</label>
+        <textarea id="descInput" placeholder="Ej: Machaca los aguacates con un tenedor. Añade la cebolla picada fina, el zumo de lima, sal y cilantro picado. Mezcla todo bien."></textarea>
+    </div>
+
+    <div class="button-group">
+        <button class="button-generate" onclick="generateCard()">Actualizar Vista Previa</button>
+        <button class="button-download" onclick="downloadPDF()">Descargar PDF</button>
+        <button class="button-print" onclick="window.print()">Imprimir</button>
+    </div>
+</div>
+
+<div class="preview-area" id="printArea">
+    <div class="card-container">
+        <div class="card-title-label">VISTA FRONTAL (A7 HORIZONTAL)</div>
+        <div class="a7-card front-card" id="frontCardToPrint">
+            <div style="font-size: 35px;">🍳</div>
+            <div class="recipe-title" id="cardTitle">Mi Receta</div>
+            <div class="servings"><span id="cardServings">4</span> personas</div>
+            <div class="watermark">FRENTE</div>
+        </div>
+    </div>
+
+    <div class="card-container">
+        <div class="card-title-label">VISTA TRASERA (A7 HORIZONTAL)</div>
+        <div class="a7-card back-card" id="backCardToPrint">
+            <div class="back-col-ingredients">
+                <h3>Ingredientes</h3>
+                <ul class="ingredients-list" id="cardIngredients">
+                    <li>Ingrediente 1</li>
+                </ul>
+            </div>
+            <div class="back-col-instructions">
+                <h3>Preparación</h3>
+                <div class="instructions" id="cardDesc">Descripción del modo de elaboración...</div>
+            </div>
+            <div class="watermark">DORSO</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const recipesDB = {
+    "guacamole": {
+        icon: "🥑",
+        ingredients: ["{N} aguacates maduros", "{N_HALF} cebolla morada picada", "Zumo de {N_QUART} lima", "Cilantro fresco", "Sal al gusto"],
+        prep: "1. Chafar los aguacates en un cuenco.
+2. Agregar la cebolla y el cilantro finamente picados.
+3. Exprimir la lima y sazonar.
+4. Mezclar con cuidado y servir con nachos."
+    },
+    "brownie": {
+        icon: "🍫",
+        ingredients: ["{N_50}g de chocolate negro", "{N_30}g de mantequilla", "{N_25}g de harina", "{N_HALF} huevos", "{N_40}g de azúcar"],
+        prep: "1. Derretir el chocolate con la mantequilla.
+2. Batir los huevos con el azúcar.
+3. Incorporar el chocolate y la harina tamizada.
+4. Hornear a 180°C durante 20 min."
+    },
+    "tacos": {
+        icon: "🌮",
+        ingredients: ["{N} tortillas de maíz", "{N_100}g de carne picada", "{N_HALF} cebolla", "Salsa de tomate", "Especias para tacos"],
+        prep: "1. Cocinar la carne en una sartén con la cebolla picada y especias.
+2. Calentar las tortillas ligeramente.
+3. Rellenar las tortillas con la carne y salsa al gusto."
+    },
+    "panquecas": {
+        icon: "🥞",
+        ingredients: ["{N_30}g de harina", "{N_HALF} huevo", "{N_50}ml de leche", "1 pizca de levadura", "Mantequilla"],
+        prep: "1. Batir los ingredientes en un bol hasta eliminar grumos.
+2. Verter porciones en una sartén engrasada caliente.
+3. Voltear cuando salgan burbujas y dorar."
+    },
+    "paella": {
+        icon: "🥘",
+        ingredients: ["{N_100}g de arroz bomba", "{N_100}g de pollo troceado", "{N_50}g de judías verdes", "{N_HALF} tomate rallado", "{N_250}ml de caldo", "Hebras de azafrán"],
+        prep: "1. Dorar el pollo en la paella con aceite.
+2. Añadir las judías verdes y el tomate, sofreír.
+3. Incorporar el arroz y el azafrán. Verter el caldo caliente.
+4. Cocinar 10 min a fuego fuerte y 8 min a fuego suave."
+    },
+    "tortilla": {
+        icon: "🍳",
+        ingredients: ["{N_2} patatas grandes", "{N_1_HALF} huevos frescos", "{N_HALF} cebolla picada (opcional)", "Aceite para freír", "Sal al gusto"],
+        prep: "1. Cortar las patatas y la cebolla en láminas finas.
+2. Freír a fuego lento en abundante aceite hasta que estén tiernas y escurrir.
+3. Batir los huevos, mezclar con las patatas y reposar 5 min.
+4. Cuajar en sartén caliente por ambos lados."
+    },
+    "carbonara": {
+        icon: "🍝",
+        ingredients: ["{N_100}g de espaguetis", "{N_40}g de guanciale o panceta", "{N_HALF} yemas de huevo", "{N_20}g de queso Pecorino", "Pimienta negra"],
+        prep: "1. Hervir la pasta al dente.
+2. Dorar el guanciale en una sartén sin añadir aceite.
+3. Mezclar las yemas con el queso y pimienta en un bol.
+4. Integrar la pasta caliente con el huevo fuera del fuego y mantecar."
+    },
+    "queso": {
+        icon: "🍰",
+        ingredients: ["{N_150}g de queso crema", "{N_50}ml de nata para montar", "{N_HALF} huevo", "{N_30}g de azúcar", "{N_10}g de harina"],
+        prep: "1. Precalentar el horno a 210°C.
+2. Batir todos los ingredientes vigorosamente hasta homogeneizar.
+3. Verter la mezcla en un molde con papel de horno húmedo.
+4. Hornear 25-30 minutos dejando el centro templado."
+    }
+};
+
+function updateBorderColor(color) {
+    document.getElementById('frontCardToPrint').style.borderColor = color;
+    document.getElementById('backCardToPrint').style.borderColor = color;
+}
+
+function autoFillRecipe() {
+    const titleInput = document.getElementById('titleInput').value.trim().toLowerCase();
+    const servings = parseInt(document.getElementById('servingsInput').value) || 4;
+
+    let matchedKey = Object.keys(recipesDB).find(key => titleInput.includes(key));
+
+    if (matchedKey) {
+        const recipe = recipesDB[matchedKey];
+
+        const processedIngredients = recipe.ingredients.map(ing => {
+            return ing
+                .replace('{N}', servings)
+                .replace('{N_HALF}', (servings / 2).toFixed(1).replace('.0', ''))
+                .replace('{N_QUART}', Math.max(1, Math.round(servings / 4)))
+                .replace('{N_2}', servings * 2)
+                .replace('{N_1_HALF}', (servings * 1.5).toFixed(1).replace('.0', ''))
+                .replace('{N_10}', servings * 10)
+                .replace('{N_20}', servings * 20)
+                .replace('{N_25}', servings * 25)
+                .replace('{N_30}', servings * 30)
+                .replace('{N_40}', servings * 40)
+                .replace('{N_50}', servings * 50)
+                .replace('{N_100}', servings * 100)
+                .replace('{N_150}', servings * 150)
+                .replace('{N_250}', servings * 250);
+        });
+
+        document.getElementById('ingredientsInput').value = processedIngredients.join('
+');
+        document.getElementById('descInput').value = recipe.prep;
+
+        document.querySelector('.front-card div:first-child').innerHTML = recipe.icon;
+
+        generateCard();
+    } else {
+        alert("Receta no predefinida. Prueba con términos como: 'Guacamole', 'Brownie', 'Tacos', 'Paella', 'Tortilla de patatas', 'Carbonara' o 'Tarta de queso'.");
+    }
+}
+
+function generateCard() {
+    const title = document.getElementById('titleInput').value || 'Sin Título';
+    const servings = document.getElementById('servingsInput').value || '1';
+    const ingredientsText = document.getElementById('ingredientsInput').value;
+    const description = document.getElementById('descInput').value || 'Sin instrucciones de preparación.';
+
+    document.getElementById('cardTitle').innerText = title;
+    document.getElementById('cardServings').innerText = servings;
+
+    const ingredientsList = document.getElementById('cardIngredients');
+    ingredientsList.innerHTML = '';
+    if (ingredientsText.trim() !== '') {
+        const lines = ingredientsText.split('
+');
+        lines.forEach(line => {
+            if (line.trim() !== '') {
+                const li = document.createElement('li');
+                li.innerText = line;
+                ingredientsList.appendChild(li);
+            }
+        });
+    } else {
+        ingredientsList.innerHTML = '<li>Ingredientes no especificados</li>';
+    }
+
+    document.getElementById('cardDesc').innerText = description;
+}
+
+function downloadPDF() {
+    const element = document.getElementById('printArea');
+    const title = document.getElementById('titleInput').value || 'Receta';
+    const color = document.getElementById('borderColorInput').value;
+
+    const opt = {
+        margin:       10,
+        filename:     `tarjeta_${title.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+}
+
+updateBorderColor(document.getElementById('borderColorInput').value);
+</script>
+
+</body>
+</html>
